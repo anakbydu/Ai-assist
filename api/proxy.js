@@ -1,8 +1,8 @@
 export default async function handler(req, res) {
-  // Buat path tanpa "/proxy" di depan
-  const path = req.url.replace(/^\/proxy/, "");
+  // ambil path aslinya, misal /auth/register atau /chat
+  const path = req.url;
 
-  // Alamat backend kamu
+  // alamat backend kamu di VPS
   const backendUrl = "http://yoztampan.xintzy.me:2009" + path;
   console.log("Forwarding to:", backendUrl);
 
