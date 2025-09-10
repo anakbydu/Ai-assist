@@ -1,26 +1,30 @@
+import { parse } from "url";
+
 export default async function handler(req, res) {
-  const path = req.url; // path udah bener sekarang
+  // Ambil URL dari request
+  const parsedUrl = parse(req.url, true);
+
+  // Hapus prefix "/api" karena backend kamu gak pake /api
+  const path = parsedUrl.pathname.replace(/^\/api/, "");
+
+  // Gabung dengan alamat VPS
   const backendUrl = "http://yoztampan.xintzy.me:2009" + path;
   console.log("Forwarding to:", backendUrl);
 
   try {
     let body;
     if (req.method !== "GET" && req.method !== "HEAD") {
-      // Baca body stream jadi buffer
       const chunks = [];
-      for await (const chunk of req) {
-        chunks.push(chunk);
-      }
+      for await (const chunk of req) chunks.push(chunk);
       body = Buffer.concat(chunks);
     }
 
     const response = await fetch(backendUrl, {
       method: req.method,
       headers: { ...req.headers },
-      body: body,
+      body,
     });
 
-    // Ambil respon dari backend
     const text = await response.text();
     res.status(response.status).send(text);
   } catch (error) {
