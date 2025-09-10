@@ -1,8 +1,11 @@
-export default async function handler(req, res) {
-  // ambil path aslinya, misal /auth/register atau /chat
-  const path = req.url;
+import { parse } from "url";
 
-  // alamat backend kamu di VPS
+export default async function handler(req, res) {
+  // Ambil pathname saja, tanpa query ?path=...
+  const parsedUrl = parse(req.url, true);
+  const path = parsedUrl.pathname.replace(/^\/proxy/, "");
+
+  // Backend VPS kamu
   const backendUrl = "http://yoztampan.xintzy.me:2009" + path;
   console.log("Forwarding to:", backendUrl);
 
