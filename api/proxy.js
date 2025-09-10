@@ -1,6 +1,10 @@
 export default async function handler(req, res) {
-  // Ganti alamat sesuai backend kamu di VPS
-  const backendUrl = "http://yoztampan.xintzy.me:2009" + req.url;
+  // Buat path tanpa "/proxy" di depan
+  const path = req.url.replace(/^\/proxy/, "");
+
+  // Alamat backend kamu
+  const backendUrl = "http://yoztampan.xintzy.me:2009" + path;
+  console.log("Forwarding to:", backendUrl);
 
   try {
     const response = await fetch(backendUrl, {
@@ -12,6 +16,7 @@ export default async function handler(req, res) {
     const text = await response.text();
     res.status(response.status).send(text);
   } catch (error) {
+    console.error("Proxy error:", error);
     res.status(500).json({ error: "Proxy error", detail: error.message });
   }
 }
