@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kynay Assistant</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #8b5cf6;
+            --primary-hover: #7c3aed;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.5s ease;
+        }
+        .chat-bubble-user {
+            border-top-right-radius: 0;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+        .chat-bubble-ai {
+            border-top-left-radius: 0;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .slide-in-right {
+            animation: slideInRight 0.3s ease-out;
+        }
+        .slide-in-left {
+            animation: slideInLeft 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideInLeft {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        /* Premium shine effect */
+        .premium-shine {
+            position: relative;
+            overflow: hidden;
+        }
+        .premium-shine::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0),
+                rgba(255, 255, 255, 0.3),
+                rgba(255, 255, 255, 0)
+            );
+            transform: rotate(30deg);
+            animation: shine 3s infinite linear;
+            opacity: 0;
+        }
+        @keyframes shine {
+            0% {
+                opacity: 0;
+                transform: translateX(-100%) rotate(30deg);
+            }
+            20% {
+                opacity: 1;
+            }
+            40% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(100%) rotate(30deg);
+            }
+        }
+        /* Typing indicator */
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f1f5f9;
+            border-radius: 18px;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #94a3b8;
+            margin-left: 4px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typingAnimation {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+        /* Sidebar chat item styling */
+        .chat-item {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        .chat-item:hover {
+            background-color: rgba(139, 92, 246, 0.1);
+            border-left-color: #8b5cf6;
+        }
+        .chat-item.active {
+            background-color: rgba(139, 92, 246, 0.15);
+            border-left-color: #8b5cf6;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8b5cf6',
+                        'primary-hover': '#7c3aed',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+    <!-- Login/Register Section -->
+    <div id="auth-section" class="min-h-screen flex items-center justify-center px-4 py-12">
+        <div class="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-10 rounded-xl shadow-2xl" data-aos="fade-up">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white premium-shine">
+                    Kynay Assistant
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+                    Sign in or create an account
+                </p>
+            </div>
+            <form class="mt-8 space-y-6" id="auth-form">
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div>
+                        <input id="username" name="username" type="text" required 
+                            class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-700 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" 
+                            placeholder="Username">
+                    </div>
+                    <div>
+                        <input id="password" name="password" type="password" required 
+                            class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" 
+                            placeholder="Password">
+                    </div>
+                    <div>
+                        <input id="captcha" name="captcha" type="text" required 
+                            class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-700 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" 
+                            placeholder="Captcha (use: bypass-captcha)">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox" 
+                            class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                            Remember me
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" id="auth-button"
+                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:scale-105">
+                        Sign In
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <button type="button" id="toggle-auth-mode" 
+                        class="mt-4 text-sm text-primary hover:text-primary-hover transition-colors duration-300">
+                        Need to create an account? Register now
+                    </button>
+                </div>
+            </form>
+            <div id="auth-error" class="hidden mt-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-md text-sm"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard Section (Hidden by default) -->
+    <div id="dashboard-section" class="hidden h-screen flex flex-col bg-white dark:bg-gray-900">
+        <!-- Navbar -->
+        <nav class="bg-white dark:bg-gray-800 shadow-lg py-3 px-6 flex justify-between items-center premium-shine">
+            <div class="flex items-center">
+                <button id="sidebar-toggle" class="text-gray-600 dark:text-gray-300 mr-4 focus:outline-none md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white">Kynay Assistant</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- Image Generation Buttons -->
+                <button id="create-image-btn" class="hidden md:flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-300 transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Create Image
+                </button>
+                <button id="edit-image-btn" class="hidden md:flex items-center px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all duration-300 transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                    Edit Image
+                </button>
+                <!-- Dark/Light Mode Toggle -->
+                <button id="theme-toggle" class="p-2 bg-gray-200 dark:bg-gray-700 rounded-full transition-colors duration-300">
+                    <svg id="theme-icon-dark" class="w-5 h-5 text-gray-800 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <svg id="theme-icon-light" class="w-5 h-5 text-yellow-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                </button>
+                <!-- Logout Button -->
+                <button id="logout-btn" class="p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar -->
+            <div id="sidebar" class="w-64 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transform transition-transform duration-300 ease-in-out md:translate-x-0 -translate-x-full fixed md:relative inset-y-0 left-0 z-40 md:z-auto">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <button id="new-chat-btn" class="w-full py-2 px-4 bg-primary hover:bg-primary-hover text-white rounded-lg flex items-center justify-center transition-all duration-300 transform hover:scale-105">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        New Chat
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4" id="chat-sessions-list">
+                    <!-- Chat sessions will be loaded here -->
+                    <div class="text-center text-gray-500 dark:text-gray-400 mt-10">
+                        <p>No chats yet. Start a new conversation!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overlay for mobile sidebar -->
+            <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden hidden"></div>
+
+            <!-- Chat Area -->
+            <div class="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
+                <!-- Chat Header -->
+                <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+                    <h2 id="current-chat-title" class="text-lg font-semibold text-gray-800 dark:text-white">Select a chat or start a new one</h2>
+                    <button id="delete-chat-btn" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors duration-300 hidden">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Messages Container -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages-container">
+                    <!-- Messages will be displayed here -->
+                    <div class="flex items-center justify-center h-full" data-aos="zoom-in">
+                        <div class="text-center text-gray-500 dark:text-gray-400">
+                            <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                            </svg>
+                            <p id="welcome-message">Welcome to Kynay Assistant! Start a conversation or select a previous chat.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typing Indicator -->
+                <div id="typing-indicator" class="hidden px-4 py-2">
+                    <div class="typing-indicator">
+                        AI is thinking
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="border-t border-gray-200 dark:border-gray-700 p-4">
+                    <form id="message-form" class="flex items-center">
+                        <input type="text" id="message-input" placeholder="Type your message..." 
+                            class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white" 
+                            disabled>
+                        <button type="submit" id="send-btn" 
+                            class="bg-primary hover:bg-primary-hover text-white py-3 px-6 rounded-r-lg transition-colors duration-300 flex items-center justify-center" 
+                            disabled>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="py-4 text-center text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+            © Kynay Assistant by Farhan Kertadiwangsa
+        </footer>
+    </div>
+
+    <!-- Image Creation Modal -->
+    <div id="create-image-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300">
+            <div class="p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Create Image</h3>
+                <form id="create-image-form">
+                    <div class="mb-4">
+                        <label for="image-prompt" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prompt</label>
+                        <textarea id="image-prompt" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white" placeholder="Describe the image you want to create..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-create-image" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-300">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-md transition-colors duration-300">
+                            Create
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Edit Modal -->
+    <div id="edit-image-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300">
+            <div class="p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Edit Image</h3>
+                <form id="edit-image-form">
+                    <div class="mb-4">
+                        <label for="image-upload" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Upload Image</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600 dark:text-gray-400">
+                                    <label for="image-file" class="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-primary hover:text-primary-hover focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary">
+                                        <span>Upload a file</span>
+                                        <input id="image-file" name="image-file" type="file" class="sr-only" accept="image/*">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-prompt" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Edit Instructions</label>
+                        <textarea id="edit-prompt" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white" placeholder="Describe how you want to edit the image..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-edit-image" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-300">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-md transition-colors duration-300">
+                            Edit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Result Modal -->
+    <div id="image-result-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl transform scale-95 transition-transform duration-300">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Image Result</h3>
+                    <button id="close-image-result" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mb-4">
+                    <img id="result-image" src="" class="w-full rounded-lg" alt="Generated image">
+                </div>
+                <div class="flex justify-end">
+                    <button id="download-image" class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-md transition-colors duration-300">
+                        Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konstanta dan variabel global
+        const API_BASE_URL = '/api/proxy';
+        let currentSessionId = null;
+        let isRegistering = false;
+        let isSidebarOpen = window.innerWidth >= 768; // Open by default on desktop
+
+        // Inisialisasi saat DOM siap
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inisialisasi AOS
+            AOS.init({
+                duration: 800,
+                easing: 'ease-out-quad',
+                once: true
+            });
+
+            // Setup tema berdasarkan preferensi pengguna
+            initTheme();
+
+            // Cek apakah pengguna sudah login
+            checkAuthStatus();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Handle window resize for responsive sidebar
+            window.addEventListener('resize', handleResize);
+        });
+
+        // Handle window resize
+        function handleResize() {
+            if (window.innerWidth >= 768) {
+                // Desktop - show sidebar
+                document.getElementById('sidebar').classList.remove('-translate-x-full');
+                document.getElementById('sidebar-overlay').classList.add('hidden');
+                isSidebarOpen = true;
+            } else {
+                // Mobile - hide sidebar
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('sidebar-overlay').classList.add('hidden');
+                isSidebarOpen = false;
+            }
+        }
+
+        // Fungsi inisialisasi tema
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIconDark = document.getElementById('theme-icon-dark');
+            const themeIconLight = document.getElementById('theme-icon-light');
+            
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeIconLight.classList.remove('hidden');
+                themeIconDark.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIconDark.classList.remove('hidden');
+                themeIconLight.classList.add('hidden');
+            }
+            
+            // Toggle tema
+            themeToggle.addEventListener('click', () => {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    themeIconDark.classList.remove('hidden');
+                    themeIconLight.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeIconLight.classList.remove('hidden');
+                    themeIconDark.classList.add('hidden');
+                }
+            });
+        }
+
+        // Cek status autentikasi
+        function checkAuthStatus() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                showDashboard();
+                loadChatSessions();
+                updateWelcomeMessage();
+            } else {
+                showAuthSection();
+            }
+        }
+
+        // Update welcome message with username
+        function updateWelcomeMessage() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const welcomeMessage = document.getElementById('welcome-message');
+            
+            if (user && user.username) {
+                welcomeMessage.textContent = `Hello ${user.username}, I'm Kynay-Assistant! How can I assist you today?`;
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Toggle mode auth (login/register)
+            document.getElementById('toggle-auth-mode').addEventListener('click', toggleAuthMode);
+            
+            // Form auth
+            document.getElementById('auth-form').addEventListener('submit', handleAuth);
+            
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            
+            // Toggle sidebar
+            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+            
+            // Overlay click to close sidebar
+            document.getElementById('sidebar-overlay').addEventListener('click', toggleSidebar);
+            
+            // Buat chat baru
+            document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
+            
+            // Hapus chat
+            document.getElementById('delete-chat-btn').addEventListener('click', deleteCurrentChat);
+            
+            // Kirim pesan
+            document.getElementById('message-form').addEventListener('submit', sendMessage);
+            
+            // Image creation
+            document.getElementById('create-image-btn').addEventListener('click', showCreateImageModal);
+            document.getElementById('cancel-create-image').addEventListener('click', hideCreateImageModal);
+            document.getElementById('create-image-form').addEventListener('submit', handleCreateImage);
+            
+            // Image editing
+            document.getElementById('edit-image-btn').addEventListener('click', showEditImageModal);
+            document.getElementById('cancel-edit-image').addEventListener('click', hideEditImageModal);
+            document.getElementById('edit-image-form').addEventListener('submit', handleEditImage);
+            
+            // Image result
+            document.getElementById('close-image-result').addEventListener('click', hideImageResultModal);
+            document.getElementById('download-image').addEventListener('click', downloadImage);
+        }
+
+        // Toggle antara login dan register
+        function toggleAuthMode() {
+            const authButton = document.getElementById('auth-button');
+            const toggleButton = document.getElementById('toggle-auth-mode');
+            
+            isRegistering = !isRegistering;
+            
+            if (isRegistering) {
+                authButton.textContent = 'Register';
+                toggleButton.textContent = 'Already have an account? Sign in';
+            } else {
+                authButton.textContent = 'Sign In';
+                toggleButton.textContent = 'Need to create an account? Register now';
+            }
+            
+            // Animasi GSAP untuk perubahan
+            gsap.fromTo(authButton, 
+                { scale: 0.95 }, 
+                { scale: 1, duration: 0.3 }
+            );
+        }
+
+        // Handle autentikasi (login/register)
+        async function handleAuth(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const captcha = document.getElementById('captcha').value;
+            const errorDiv = document.getElementById('auth-error');
+            
+            // Validasi input
+            if (!username || !password || !captcha) {
+                showError(errorDiv, 'All fields are required');
+                return;
+            }
+            
+            try {
+                const endpoint = isRegistering ? '/auth/register' : '/auth/login';
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password, captcha })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    // Simpan token dan info user
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    // Animasi transisi ke dashboard
+                    gsap.to('#auth-section', {
+                        opacity: 0,
+                        duration: 0.5,
+                        onComplete: () => {
+                            showDashboard();
+                            loadChatSessions();
+                            updateWelcomeMessage();
+                        }
+                    });
+                } else {
+                    showError(errorDiv, data.error || 'Authentication failed');
+                }
+            } catch (error) {
+                showError(errorDiv, 'Network error. Please try again.');
+            }
+        }
+
+        // Tampilkan error
+        function showError(element, message) {
+            element.textContent = message;
+            element.classList.remove('hidden');
+            
+            // Animasi error
+            gsap.fromTo(element, 
+                { x: -10, opacity: 0 }, 
+                { x: 0, opacity: 1, duration: 0.3 }
+            );
+            
+            // Sembunyikan error setelah 5 detik
+            setTimeout(() => {
+                gsap.to(element, {
+                    opacity: 0,
+                    duration: 0.5,
+                    onComplete: () => element.classList.add('hidden')
+                });
+            }, 5000);
+        }
+
+        // Tampilkan halaman auth
+        function showAuthSection() {
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            
+            // Animasi fade in
+            gsap.to('#auth-section', {
+                opacity: 1,
+                duration: 0.5
+            });
+        }
+
+        // Tampilkan dashboard
+        function showDashboard() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            
+            // Animasi fade in
+            gsap.to('#dashboard-section', {
+                opacity: 1,
+                duration: 0.5
+            });
+        }
+
+        // Handle logout
+        function handleLogout() {
+            // Animasi keluar
+            gsap.to('#dashboard-section', {
+                opacity: 0,
+                duration: 0.5,
+                onComplete: () => {
+                    // Hapus token dan data user
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    
+                    // Reset state
+                    currentSessionId = null;
+                    
+                    // Tampilkan halaman auth
+                    showAuthSection();
+                }
+            });
+        }
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            isSidebarOpen = !isSidebarOpen;
+            
+            if (isSidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                if (window.innerWidth < 768) {
+                    overlay.classList.remove('hidden');
+                }
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Muat daftar chat sessions
+        async function loadChatSessions() {
+            const token = localStorage.getItem('token');
+            const sessionsList = document.getElementById('chat-sessions-list');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/session`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    if (data.sessions.length === 0) {
+                        sessionsList.innerHTML = `
+                            <div class="text-center text-gray-500 dark:text-gray-400 mt-10" data-aos="fade-in">
+                                <p>No chats yet. Start a new conversation!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    sessionsList.innerHTML = '';
+                    data.sessions.forEach(session => {
+                        const sessionElement = createSessionElement(session);
+                        sessionsList.appendChild(sessionElement);
+                    });
+                } else {
+                    console.error('Failed to load sessions');
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+            }
+        }
+
+        // Buat elemen session
+        function createSessionElement(session) {
+            const div = document.createElement('div');
+            div.className = 'p-3 mb-2 rounded-lg cursor-pointer chat-item bg-white dark:bg-gray-700 shadow-sm hover:shadow-md transition-all duration-300';
+            div.setAttribute('data-session-id', session.id);
+            
+            // Extract first message or use default title
+            let title = session.title || 'New Chat';
+            if (session.messages && session.messages.length > 0) {
+                const firstMessage = session.messages[0];
+                if (firstMessage.content) {
+                    title = firstMessage.content.length > 30 
+                        ? firstMessage.content.substring(0, 30) + '...' 
+                        : firstMessage.content;
+                }
+            }
+            
+            div.innerHTML = `
+                <h3 class="font-medium text-gray-800 dark:text-white truncate">${title}</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${new Date(session.createdAt).toLocaleDateString()}</p>
+            `;
+            
+            div.addEventListener('click', () => {
+                // Remove active class from all items
+                document.querySelectorAll('.chat-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                // Add active class to clicked item
+                div.classList.add('active');
+                
+                loadChatSession(session.id);
+                // On mobile, close sidebar after selecting a chat
+                if (window.innerWidth < 768) {
+                    toggleSidebar();
+                }
+            });
+            
+            // Animasi saat muncul
+            gsap.from(div, {
+                opacity: 0,
+                y: 20,
+                duration: 0.4,
+                delay: Math.random() * 0.2
+            });
+            
+            return div;
+        }
+
+        // Muat chat session
+        async function loadChatSession(sessionId) {
+            const token = localStorage.getItem('token');
+            const messagesContainer = document.getElementById('messages-container');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/session/${sessionId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    currentSessionId = sessionId;
+                    
+                    // Update chat title
+                    document.getElementById('current-chat-title').textContent = data.session.title || 'Chat Session';
+                    
+                    // Aktifkan input pesan
+                    document.getElementById('message-input').disabled = false;
+                    document.getElementById('send-btn').disabled = false;
+                    
+                    // Tampilkan tombol hapus chat
+                    document.getElementById('delete-chat-btn').classList.remove('hidden');
+                    
+                    // Tampilkan pesan
+                    displayMessages(data.session.messages);
+                    
+                    // Scroll ke bawah
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } else {
+                    console.error('Failed to load session');
+                }
+            } catch (error) {
+                console.error('Error loading session:', error);
+            }
+        }
+
+        // Tampilkan pesan
+        function displayMessages(messages) {
+            const messagesContainer = document.getElementById('messages-container');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const userName = user.username || 'there';
+            
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = `
+                    <div class="flex items-center justify-center h-full" data-aos="zoom-in">
+                        <div class="text-center text-gray-500 dark:text-gray-400">
+                            <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                            </svg>
+                            <p>Hello ${userName}, I'm Kynay-Assistant! How can I assist you today?</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            messagesContainer.innerHTML = '';
+            messages.forEach((message, index) => {
+                const messageElement = createMessageElement(message, index);
+                messagesContainer.appendChild(messageElement);
+            });
+        }
+
+        // Buat elemen pesan
+        function createMessageElement(message, index) {
+            const div = document.createElement('div');
+            const isUser = message.role === 'user';
+            
+            div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `
+                <div class="max-w-xs md:max-w-md lg:max-w-lg xl:max-w-xl rounded-xl p-4 ${isUser ? 'chat-bubble-user' : 'chat-bubble-ai'} ${isUser ? 'slide-in-right' : 'slide-in-left'} fade-in">
+                    <p class="text-sm">${message.content}</p>
+                    <p class="text-xs opacity-70 mt-1 text-right">${new Date(message.ts).toLocaleTimeString()}</p>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        // Buat chat baru
+        async function createNewChat() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/session`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: 'New Chat' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    // Muat ulang daftar session
+                    loadChatSessions();
+                    
+                    // Muat session baru
+                    loadChatSession(data.session.id);
+                } else {
+                    console.error('Failed to create new chat');
+                }
+            } catch (error) {
+                console.error('Error creating new chat:', error);
+            }
+        }
+
+        // Hapus chat saat ini
+        async function deleteCurrentChat() {
+            if (!currentSessionId) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/session/${currentSessionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    // Reset state
+                    currentSessionId = null;
+                    
+                    // Nonaktifkan input pesan
+                    document.getElementById('message-input').disabled = true;
+                    document.getElementById('send-btn').disabled = true;
+                    
+                    // Sembunyikan tombol hapus chat
+                    document.getElementById('delete-chat-btn').classList.add('hidden');
+                    
+                    // Reset chat title
+                    document.getElementById('current-chat-title').textContent = 'Select a chat or start a new one';
+                    
+                    // Reset tampilan pesan
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    const userName = user.username || 'there';
+                    
+                    document.getElementById('messages-container').innerHTML = `
+                        <div class="flex items-center justify-center h-full" data-aos="zoom-in">
+                            <div class="text-center text-gray-500 dark:text-gray-400">
+                                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                </svg>
+                                <p>Hello ${userName}, I'm Kynay-Assistant! How can I assist you today?</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Muat ulang daftar session
+                    loadChatSessions();
+                } else {
+                    console.error('Failed to delete chat');
+                }
+            } catch (error) {
+                console.error('Error deleting chat:', error);
+            }
+        }
+
+        // Kirim pesan
+        async function sendMessage(e) {
+            e.preventDefault();
+            
+            if (!currentSessionId) return;
+            
+            const token = localStorage.getItem('token');
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            // Tambahkan pesan pengguna ke UI
+            const userMessage = {
+                id: Date.now().toString(),
+                role: 'user',
+                content: message,
+                ts: Date.now()
+            };
+            
+            addMessageToUI(userMessage);
+            
+            // Kosongkan input
+            messageInput.value = '';
+            
+            // Tampilkan indikator typing
+            document.getElementById('typing-indicator').classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/chat/${currentSessionId}/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                
+                // Sembunyikan indikator typing
+                document.getElementById('typing-indicator').classList.add('hidden');
+                
+                if (data.ok) {
+                    // Tambahkan respons AI ke UI
+                    addMessageToUI(data.message);
+                } else {
+                    console.error('Failed to send message');
+                    // Tampilkan pesan error
+                    const errorMessage = {
+                        id: Date.now().toString(),
+                        role: 'assistant',
+                        content: 'Sorry, I encountered an error. Please try again.',
+                        ts: Date.now()
+                    };
+                    addMessageToUI(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                // Sembunyikan indikator typing
+                document.getElementById('typing-indicator').classList.add('hidden');
+                // Tampilkan pesan error
+                const errorMessage = {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: 'Network error. Please check your connection and try again.',
+                    ts: Date.now()
+                };
+                addMessageToUI(errorMessage);
+            }
+        }
+
+        // Tambahkan pesan ke UI
+        function addMessageToUI(message) {
+            const messagesContainer = document.getElementById('messages-container');
+            
+            // Hapus placeholder jika ada
+            if (messagesContainer.querySelector('.flex.items-center.justify-center')) {
+                messagesContainer.innerHTML = '';
+            }
+            
+            const messageElement = createMessageElement(message, messagesContainer.children.length);
+            messagesContainer.appendChild(messageElement);
+            
+            // Scroll ke bawah
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Tampilkan modal buat gambar
+        function showCreateImageModal() {
+            const modal = document.getElementById('create-image-modal');
+            modal.classList.remove('hidden');
+            
+            gsap.to(modal, {
+                opacity: 1,
+                duration: 0.3
+            });
+            
+            gsap.to(modal.querySelector('.bg-white'), {
+                scale: 1,
+                duration: 0.3,
+                ease: 'back.out(1.7)'
+            });
+        }
+
+        // Sembunyikan modal buat gambar
+        function hideCreateImageModal() {
+            const modal = document.getElementById('create-image-modal');
+            
+            gsap.to(modal, {
+                opacity: 0,
+                duration: 0.2,
+                onComplete: () => modal.classList.add('hidden')
+            });
+        }
+
+        // Handle buat gambar
+        async function handleCreateImage(e) {
+            e.preventDefault();
+            
+            const prompt = document.getElementById('image-prompt').value;
+            const token = localStorage.getItem('token');
+            
+            if (!prompt) return;
+            
+            hideCreateImageModal();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/image/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    // Tampilkan hasil gambar
+                    showImageResult(data.result);
+                } else {
+                    console.error('Failed to create image');
+                    alert('Failed to create image. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error creating image:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Tampilkan modal edit gambar
+        function showEditImageModal() {
+            const modal = document.getElementById('edit-image-modal');
+            modal.classList.remove('hidden');
+            
+            gsap.to(modal, {
+                opacity: 1,
+                duration: 0.3
+            });
+            
+            gsap.to(modal.querySelector('.bg-white'), {
+                scale: 1,
+                duration: 0.3,
+                ease: 'back.out(1.7)'
+            });
+        }
+
+        // Sembunyikan modal edit gambar
+        function hideEditImageModal() {
+            const modal = document.getElementById('edit-image-modal');
+            
+            gsap.to(modal, {
+                opacity: 0,
+                duration: 0.2,
+                onComplete: () => modal.classList.add('hidden')
+            });
+        }
+
+        // Handle edit gambar
+        async function handleEditImage(e) {
+            e.preventDefault();
+            
+            const prompt = document.getElementById('edit-prompt').value;
+            const fileInput = document.getElementById('image-file');
+            const token = localStorage.getItem('token');
+            
+            if (!prompt || !fileInput.files.length) return;
+            
+            hideEditImageModal();
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('prompt', prompt);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/image/edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    // Tampilkan hasil gambar
+                    showImageResult(data.result);
+                } else {
+                    console.error('Failed to edit image');
+                    alert('Failed to edit image. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error editing image:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Tampilkan hasil gambar
+        function showImageResult(result) {
+            const modal = document.getElementById('image-result-modal');
+            const image = document.getElementById('result-image');
+            
+            // Tentukan URL gambar berdasarkan format respons
+            let imageUrl = '';
+            if (result.url) {
+                imageUrl = result.url;
+            } else if (result.data && result.data.url) {
+                imageUrl = result.data.url;
+            } else if (result.image) {
+                imageUrl = result.image;
+            } else if (result.base64) {
+                imageUrl = `data:image/png;base64,${result.base64}`;
+            }
+            
+            if (!imageUrl) {
+                alert('No image data received');
+                return;
+            }
+            
+            image.src = imageUrl;
+            modal.classList.remove('hidden');
+            
+            gsap.to(modal, {
+                opacity: 1,
+                duration: 0.3
+            });
+            
+            gsap.to(modal.querySelector('.bg-white'), {
+                scale: 1,
+                duration: 0.3,
+                ease: 'back.out(1.7)'
+            });
+        }
+
+        // Sembunyikan modal hasil gambar
+        function hideImageResultModal() {
+            const modal = document.getElementById('image-result-modal');
+            
+            gsap.to(modal, {
+                opacity: 0,
+                duration: 0.2,
+                onComplete: () => modal.classList.add('hidden')
+            });
+        }
+
+        // Download gambar
+        function downloadImage() {
+            const image = document.getElementById('result-image');
+            const link = document.createElement('a');
+            link.href = image.src;
+            link.download = `kynay-assistant-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
